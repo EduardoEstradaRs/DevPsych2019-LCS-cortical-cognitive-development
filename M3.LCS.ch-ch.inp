@@ -1,5 +1,6 @@
 TITLE: Model 3 in
-Time-lagged associations between cognitive and cortical thickness development: Cognitive changes predict cortical changes. Submitted to Developmental Psychology.
+Time-lagged associations between cognitive and cortical thickness development: Cognitive changes predict cortical changes.
+Submitted to Developmental Psychology.
 
 BLCS. Age ->int ->slp.
 Var(0,0). Cov0. 
