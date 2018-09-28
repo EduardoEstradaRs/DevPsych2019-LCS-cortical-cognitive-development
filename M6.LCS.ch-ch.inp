@@ -1,0 +1,137 @@
+TITLE: Model 6 in
+Time-lagged associations between cognitive and cortical thickness development: Cognitive changes predict cortical changes. Submitted to Developmental Psychology.
+
+BLCS. Age ->int ->slp.
+Var(0,0). Cov0. Var(s,s). CovS. Covs(0s,0s)
+Slfbk lv-ch. ch-ch. Coupl lv-ch ch-ch
+
+DATA: FILE IS "data.dat";
+
+VARIABLE:
+NAMES = id
+        Blk1 Blk2 Blk3
+        Mat1 Mat2 Mat3
+        Sml1 Sml2 Sml3
+        Voc1 Voc2 Voc3
+		CT1 CT2 CT3
+        Age1; 
+USEVARIABLES = Blk1 Blk2 Blk3
+               Mat1 Mat2 Mat3
+               Sml1 Sml2 Sml3
+               Voc1 Voc2 Voc3 
+               CT1 CT2 CT3
+               Age1 LnAge1;
+			   
+MISSING=.;
+
+DEFINE:
+Age1 = Age1 + .00001;
+LnAge1 = log(Age1 + .00001);
+
+ANALYSIS: ESTIMATOR = ML;
+
+
+MODEL: 
+!MEASUREMENT MODEL
+!Creating Latent Variables
+g1 by blk1 @1; g1 by Mat1 ; g1 by Sml1 (lsm); g1 by Voc1 (lvc);
+g2 by blk2 @1; g2 by Mat2 ; g2 by Sml2 (lsm); g2 by Voc2 (lvc);
+g3 by blk3 @1; g3 by Mat3 ; g3 by Sml3 (lsm); g3 by Voc3 (lvc);
+
+ct1 by pCT1 @1;
+ct2 by pCT2 @1;
+ct3 by pCT3 @1;
+
+
+!Auto-regression
+g2-g3 pon g1-g2 @1 (ar_g);
+ct2-ct3 pon ct1-ct2 @1 (ar_ct);
+
+!Define latent change   
+dg2 by g2 @1;
+dg3 by g3 @1;
+
+dct2 by ct2 @1;
+dct3 by ct3 @1;
+
+!Auto-proportions (Beta)
+dg2-dg3 pon g1-g2 *-0.125 (b_g);
+dct2-dct3 pon ct1-ct2 *-.8 (b_ct);
+
+dg3 pon dg2 *-0.125 (ph_g);
+dct3 pon dct2 *-.8 (ph_ct);
+
+!Couplings (Gamma)
+dg2-dg3 pon ct1-ct2 *-0.125 (g_g);
+dct2-dct3 pon g1-g2 *-.8 (g_ct);
+
+dg3 pon dct2 *-0.125 (x_g_ct);
+dct3 pon dg2 *-.8 (x_ct_g);
+
+!Define Level and Slope
+g0 BY g1@1; 
+gs BY dg2-dg3@1 ; 
+
+ct0 BY ct1@1; 
+cts BY dct2-dct3@1 ; 
+
+
+!Level and Slope Means and Variances
+[g0@0]; [gs*0];
+g0*0 ; gs*0; g0 with gs *0;
+
+![g0@0]; [gs@0];
+!g0@1; gs@1; g0 with gs @0;
+
+[ct0*0]; [cts*-.102] ; 
+ct0*1 ; cts*0 ; ct0 with cts *0;
+
+! Latent covariances
+g0 with ct0*0 cts*0;
+gs with ct0*0 cts*0;
+
+
+! Intercepts
+[Blk1-Blk3] (t_bl) ; 
+[mat1-mat3] ;!(t_mt); 
+[sml1-sml3] (t_sm);  
+[voc1-voc3] (t_vc); 
+
+[g1@0 g2@0 g3@0] ; 
+[dg2-dg3 @0] ;
+
+[pCT1-pCT3@0]  ; 
+[ct1@0 ct2@0 ct3@0]   ; 
+[dct2-dct3 @0] ; 
+
+
+! Residual variances
+Blk1-Blk3 * ;!(bl_e) ; 
+mat1-mat3 * ;!(mt_e) ; 
+sml1-sml3 * ;!(sm_e) ; 
+voc1-voc3 * ;!(vc_e) ; 
+
+g1@0 g2@0 g3@0 ; 
+dg2-dg3 @0 ;
+
+pCT1-pCT3 * (ct_e)  ; 
+ct1@0; ct2@0; ct3@0 (ct3) ; 
+dct2-dct3 @0 ; 
+
+! Residual covariances
+Blk1 with Blk2 Blk3; Blk2 with Blk3;
+Mat1 with Mat2 mat3; Mat2 with Mat3;
+Sml1 with Sml2 Sml3; Sml2 with Sml3;
+Voc1 with Voc2 Voc3; Voc2 with Voc3;
+
+
+! Age effects
+g0  on Age1 *0; g0  on LnAge1 *0;
+ct0  on Age1 *0; ct0  on LnAge1 *0;
+
+gs  on Age1 *0; gs  on LnAge1 *0;
+cts  on Age1 *0; cts  on LnAge1 *0;
+
+
+OUTPUT: SAMPSTAT STDYX TECH1 TECH4 TECH8;
+
